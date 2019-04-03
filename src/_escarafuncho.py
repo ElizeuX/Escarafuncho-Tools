@@ -1,21 +1,42 @@
+'''
+ Copyright (c) 2019 Elizeu Ribeiro Sanches Xavier
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
+ documentation files (the "Software"), to deal in the Software without restriction, including without 
+ limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+ the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in all copies or 
+ substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED 
+ TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
+ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
+ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ DEALINGS IN THE SOFTWARE.
+'''
+
 #
-# _escarafuncho.py
+# _extrairArquivoEscondido.py
 #
 
-# pfish support functions, where all the real work gets done
+# suporta as funções do escarafuncho, onde o trabalho real é feito
 # 
 # Display Message()                    ParseCommandLine()                                WalkPath()
-# LogEvents()                          class _CVSWriter
-# ValidateDirectory()                  ValidateDirectoryWritable()                       UnZip_File() 
+# HashFile()                           LogEvents()                                       class _CVSWriter
+# ValidateDirectory()                  ValidateDirectoryWritable()                       UnZip_File()
 #
 
-import os                                 #Python Standard Library - Miscellaneous operating system interfaces
-import stat                               #Python Standard Library - constants and functions for interpreting os results
+import os                                #Python Standard Library - Miscellaneous operating system interfaces
+import stat                              #Python Standard Library - constants and functions for interpreting os results
 import time                              #Python Standard Library - Time access and conversions functions
-import argparse                        #Python Standard Library - Parser for command-line options, arguments
-import csv                                 #Python Standard Library - reader and writer for csv files
+import hashlib                           #Python Standard Library - Secure hashes and message digests
+import argparse                          #Python Standard Library - Parser for command-line options, arguments
+import csv                               #Python Standard Library - reader and writer for csv files
 import logging        
+
 import zipfile
+
 
 log = logging.getLogger('main._escarafuncho')
 log.info("I'm here in _escarafuncho!")
@@ -37,6 +58,12 @@ def ParseCommandLine():
 
     parser = argparse.ArgumentParser('Python sistema escarafunchador .. escarafuncho')
 
+    # setup a group where the selection is mutually exclusive and required.
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--md5',       help = 'specifies MD5 algorithm',       action='store_true')
+    group.add_argument('--sha256',   help = 'specifies SHA256 algorithm',   action='store_true')   
+    group.add_argument('--sha512',   help = 'specifies SHA512 algorithm',   action='store_true')   
+
     parser.add_argument('-v', "--verbose",  help="allows progress messages to be displayed", action='store_true')    
     parser.add_argument('-d', '--rootPath', type= ValidateDirectory, required=True, help="specify the root path for hashing")
     parser.add_argument('-r', '--reportPath', type= ValidateDirectoryWritable, required=True, help="specify the path for reports and logs will be written")   
@@ -45,10 +72,21 @@ def ParseCommandLine():
     # to all the Functions within the _pfish.py module
 
     global gl_args    
+    global gl_hashType
     
-    gl_args = parser.parse_args()           
+    gl_args = parser.parse_args()    
+
+    if gl_args.md5:
+        gl_hashType = 'MD5'
+    elif gl_args.sha256:
+        gl_hashType = 'SHA256'
+    elif gl_args.sha512:
+        gl_hashType = 'SHA512'
+    else:
+        gl_hashType = "Unknown"
+        logging.error('Tipo de Hash desconhecido')       
         
-    DisplayMessage("Command line processed: Successfully")
+    DisplayMessage("Linha de comando processada com sucesso")
 
     return
 
@@ -74,7 +112,7 @@ def WalkPath():
     processCount = 0
     errorCount = 0
     
-    oCVS = _CSVWriter(os.path.join(gl_args.reportPath, 'fileSystemReport.csv') )   
+    oCVS = _CSVWriter(os.path.join(gl_args.reportPath, 'fileSystemReport.csv'), gl_hashType)   
     
     # Create a loop that process all the files starting
     # at the rootPath, all sub-directories will also be
@@ -104,6 +142,8 @@ def WalkPath():
 
 def UnZip_File(theFile, simpleName, o_result):
 
+    tamanhoLinha = 60
+
     # Verify that the path is valid
     if os.path.exists(theFile):
 
@@ -130,24 +170,45 @@ def UnZip_File(theFile, simpleName, o_result):
                     groupID = str(gid)
                     fileMode = bin(mode)
 
+                    f = open(theFile, 'rb')
+                    rd = f.read()
+                    if gl_args.md5:
+                        #Calcuation and Print the MD5
+                        hash = hashlib.md5()
+                        hash.update(rd)
+                        hexMD5 = hash.hexdigest()
+                        hashValue = hexMD5.upper()
+                    elif gl_args.sha256:
+                        hash=hashlib.sha256()
+                        hash.update(rd)
+                        hexSHA256 = hash.hexdigest()
+                        hashValue = hexSHA256.upper()
+                    elif gl_args.sha512:
+                        #Calculate and Print the SHA512
+                        hash=hashlib.sha512()
+                        hash.update(rd)
+                        hexSHA512 = hash.hexdigest()
+                        hashValue = hexSHA512.upper()
+                    else:
+                        log.error('Hash not Selected')
+                    f.close()
+                    
                     #Attempt to open the file                                    
                     un_zip = zipfile.ZipFile(theFile)
                     
-                    #Print the simple file name
-                    DisplayMessage("Descompactando: " + theFile)                   
-                    
                 except zipfile.BadZipfile:
-                    #if open fails não é um zipfile                    
-                    log.warning(theFile + '...Nada Consta')
-                    DisplayMessage(theFile + '..Nada Consta')
-                    o_result.writeCSVRow(simpleName, theFile, size, modifiedTime, accessTime, createdTime, ownerID, groupID, mode, 'NADA CONSTA')
+                    #if open fails não é um zipfile                                        
+                    log.warning(theFile + '.' * (tamanhoLinha - len(theFile)) + 'Nada Consta')
+                    DisplayMessage(theFile + '.' * (tamanhoLinha - len(theFile)) + 'Nada Consta')
+                    o_result.writeCSVRow(simpleName, os.path.dirname(theFile), size, modifiedTime, accessTime, createdTime, hashValue,  ownerID, groupID, mode, 'NADA CONSTA')
                     return True
                 else:
                     try:               
-                        log.info(theFile + "\tArquivo suspeito")                                 
-                        if not os.path.exists('tmp'):
-                            os.makedirs('tmp')
-                        un_zip.extractall('tmp')
+                        log.info(theFile + '.' * (tamanhoLinha - len(theFile)) + 'Arquivo suspeito')
+                        DisplayMessage(theFile +  '.' * (tamanhoLinha - len(theFile)) + 'Arquivo suspeito')
+                        if not os.path.exists(simpleName+'-DESCOMPACTADO'):
+                            os.makedirs(simpleName+'-DESCOMPACTADO')                            
+                        un_zip.extractall(simpleName+'-DESCOMPACTADO')
                         un_zip.close()
                     except sipfile.BadZipFile:
                         # if read fails, then close the file and report error
@@ -156,7 +217,7 @@ def UnZip_File(theFile, simpleName, o_result):
                         return                   
                         
                 # write one row to the output file                                        
-                o_result.writeCSVRow(simpleName, theFile, size, modifiedTime, accessTime, createdTime, ownerID, groupID, mode, "ARQUIVO SUSPEITO")
+                o_result.writeCSVRow(simpleName, os.path.dirname(theFile), size, modifiedTime, accessTime, createdTime, hashValue, ownerID, groupID, mode, "ARQUIVO SUSPEITO")
                 
                 return True
             else:
@@ -262,17 +323,17 @@ def  DisplayMessage(msg):
 
 class _CSVWriter:
 
-    def __init__(self, fileName):
+    def __init__(self, fileName, hashType):
         try:
             # create a writer object and then write the header row            
             self.csvFile = open(fileName, 'w')            
-            self.writer = csv.writer(self.csvFile, delimiter=';', quoting=csv.QUOTE_ALL)
-            self.writer.writerow(('File', 'Path', 'Size', 'Modified Time', 'Access Time', 'Created Time', 'Owner', 'Group', 'Mode', 'Observação' ))            
+            self.writer = csv.writer(self.csvFile, delimiter=';', quoting=csv.QUOTE_ALL, lineterminator='\n')
+            self.writer.writerow(('File', 'Path', 'Size', 'Modified Time', 'Access Time', 'Created Time', hashType, 'Owner', 'Group', 'Mode', 'Observação' ))            
         except Exception as e:            
             log.error('CSV File Failure')            
 
-    def writeCSVRow(self, fileName, filePath, fileSize, mTime, aTime, cTime, own, grp, mod, observacao):                
-        self.writer.writerow((fileName, filePath, fileSize, mTime, aTime, cTime,  own, grp, mod, observacao))                        
+    def writeCSVRow(self, fileName, filePath, fileSize, mTime, aTime, cTime, hashValue, own, grp, mod, observacao):
+        self.writer.writerow((fileName, filePath, fileSize, mTime, aTime, cTime, hashValue, own, grp, mod, observacao))
 
     def writerClose(self):
         self.csvFile.close()
