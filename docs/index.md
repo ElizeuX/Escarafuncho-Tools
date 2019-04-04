@@ -4,8 +4,8 @@
 ## NOME
 
 
-##SINOPSE
+## SINOPSE
 
-##DESCRIÇÃO
+## DESCRIÇÃO
 
-##OPÇÕES
+## OPÇÕES
