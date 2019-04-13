@@ -1,4 +1,4 @@
-## Escarafuncho-Tools
+# Escarafuncho-Tools
 Ferramentas para investigação forense
 
 ## Uso
@@ -19,5 +19,11 @@ Optional arguments:
                         specify the path for reports and logs will be written
 ```
 ## Exemplos
+### Escarafunchar o pendrive conectado a porta USB
+
+´´´
+python escarafuncho --md5 -v -d E:\ -r C:\Relatórios\CASO-20190401-Contrutora Abdala
+
+´´´
 
 
