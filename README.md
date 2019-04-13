@@ -26,10 +26,10 @@ Optional arguments:
 ## Exemplos
 ### Escarafunchar o pendrive conectado a porta USB
 
-´´´
+```
 python escarafuncho --md5 -v -d E:\ -r C:\Relatórios\CASO-20190401-Contrutora Abdala
 
-´´´
+```
 
 ## TODO
 Procurar outros tipos de arquivos.
