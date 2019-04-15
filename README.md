@@ -27,9 +27,30 @@ Optional arguments:
 ### Escarafunchar o pendrive conectado a porta USB
 
 ```
-python escarafuncho --md5 -v -d E:\ -r C:\Relatórios\CASO-20190401-Contrutora Abdala
+python escarafuncho --md5 -v -d E:\ -r "C:\Relatórios\CASO-20190401-Contrutora Abdala"
 
+
+C:\Desenvolvimento\forensicTolls\python escarafuncho.py --md5 -v -d E:\ -r "C:\Relatórios\CASO-20190401-Contrutora Abdala"
+Linha de comando processada com sucesso
+Bemvindo ao Escarafunchador ... version 0.1
+E:\call_09-50-16_OUT_0411430103660.amr......................Nada Consta
+E:\TELEFONEMA_01_20171206_145311_Ivo Es.3gpp................Nada Consta
+E:\20180311_083146_Beatriz.mp3..............................Nada Consta
+E:\20180312_141149_Ivo Es.3gpp..............................Nada Consta
+E:\20180320_150131_38824000.3gpp............................Nada Consta
+E:\orchid-3479539_960_720.jpg...............................Nada Consta
+E:\orch-233.jpg.............................................Nada Consta
+E:\tipos-de-flores-orquídeas.jpg............................Nada Consta
+E:\orquideas.jpg............................................Arquivo suspeito
+E:\orch-yellow.jpg..........................................Nada Consta
+E:\20180321_135421_Beatriz.3gpp.............................Nada Consta
+E:\20180321_141303_941919520.3gpp...........................Nada Consta
+E:\20180409_143005_30554560.3gpp............................Nada Consta
+E:\20180411_134847_30554560.3gpp............................Nada Consta
+E:\orquideas_brasil.jpg.....................................Arquivo suspeito
+E:\System Volume Information\IndexerVolumeGuid..............Nada Consta
+E:\System Volume Information\WPSettings.dat.................Nada Consta
+Fim de execução
 ```
-
 ## TODO
 Procurar outros tipos de arquivos.
